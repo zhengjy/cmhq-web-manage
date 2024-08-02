@@ -13,6 +13,24 @@
             >逆向</span
           >
         </el-form-item>
+        <el-form-item label="下单来源:">
+          <el-tooltip class="item" effect="dark" content="20kg以上产品走快运B2C" placement="top-start">
+            <i class="el-icon-question"></i>
+          </el-tooltip>
+          <el-radio-group v-model="parsedData.orderOrigin" @input="orderOriginInput" size="mini" style="width: 178px">
+            <el-radio-button label="1">快递B2C</el-radio-button>
+            <el-radio-button label="4">快运B2C</el-radio-button>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="订单编号:">
+          <el-tooltip class="item" effect="dark" content="商家退货的线上订单编号，商家选填" placement="top-start">
+            <i class="el-icon-question"></i>
+          </el-tooltip>
+          <el-input
+            v-model="parsedData.courierOrderExtend.company_bill_code"
+            style="width: 240px"
+          ></el-input>
+        </el-form-item>
         <br />
         <el-form-item label="物品分类：">
           <el-select v-model="parsedData.courierOrderExtend.jtGoodsType">
@@ -72,6 +90,7 @@
             ></el-option>
           </el-select>
         </el-form-item>
+
         <el-form-item label="发货地址：" prop="goodsName">
           <!-- <el-input v-model="parsedData.goodsName" style="width: 186px" placeholder="必填"></el-input> -->
           <!-- <el-button type="success" icon="el-icon-plus" @click="toAddAddressList">点击可增加多个发货地址</el-button> -->
@@ -197,10 +216,12 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <div class="tips">
-          包裹重量小体积大时按照体积计算重量，实际重量以快递员测量核实为准，点击设置体积测算体积重量，换算公式:体积重量=长x宽x高(cm)/8000
+        <div style="font-size: 14px;padding: 0px 0px 10px 80px;font-weight:bolder;">
+          注：包裹重量小体积大时按照体积计算重量，实际重量以订单签收后实时回传重量为准哦~，
+          <span @click="billRuleShow"  style="cursor: pointer;color: red;">点击了解计费规则和注意事项</span
+          >
         </div>
-        <el-form-item label="期望上门取件时间：" prop="takeGoodsTime">
+        <el-form-item label="期望上门取件时间：" prop="takeGoodsTime" style="width: 500px">
           <!-- <el-date-picker
             type="datetime"
             placeholder="选择日期"
@@ -208,7 +229,7 @@
             style="width: 186px"
             value-format="yyyy-MM-dd HH:mm:ss"
           ></el-date-picker> -->
-          <QuickTime :value.sync="parsedData.takeGoodsTime" />
+          <QuickTime :value.sync="parsedData.takeGoodsTime" style="width: 300px" />
         </el-form-item>
         <el-form-item label="备注：" prop="msg">
           <el-input
@@ -219,6 +240,8 @@
             style="width: 400px"
           ></el-input>
         </el-form-item>
+
+
       </el-form>
     </div>
     <!-- 收货 -->
@@ -298,8 +321,14 @@
             ></el-input>
           </el-form-item>
         </el-row>
+        <div class="agree-warp">
+          <el-checkbox v-model="checkedAgree"></el-checkbox>&nbsp;&nbsp;我已理解并遵守<span
+          @click="xieyiShow" class="link"
+        >《服务协议》</span
+        >
+        </div>
         <el-form-item>
-          <el-button type="primary" @click="onSubmit" :loading="loading"
+          <el-button type="primary" @click="onSubmit" :loading="loading" :disabled="!checkedAgree"
             >确定</el-button
           >
           <!-- <el-button type="primary" @click="getShareUrlAdd"
@@ -307,11 +336,15 @@
         </el-form-item>
       </el-form>
       <Dig ref="dig" @ok="toSubmit" />
+      <XieyiDig ref="xieyiDig"   @checkedAgreeHandle="checkedAgreeHandle"  />
+      <BillRuleDig ref="billRuleDig"/>
     </div>
   </div>
 </template>
 <script>
 import Dig from "./dig.vue";
+import BillRuleDig from "../billRule.vue";
+import XieyiDig from "../xieyi.vue";
 import {
   getCourierFreightCharge,
   addressAnalysis,
@@ -324,14 +357,20 @@ import {
 import { pcaTextArr } from "@/utils/area/index";
 import QuickTime from "@/components/QuickTime";
 
+
 export default {
   components: {
     Dig,
     QuickTime,
+    XieyiDig,
+    BillRuleDig,
   },
   data() {
     return {
       loading: false,
+      checkedAgree: true,
+      dialogVisible: false,
+      billRule:false,
       inputTextTo: "",
       inputTextFrom: "",
       addressList: [],
@@ -366,6 +405,7 @@ export default {
         toArea: null,
         toAddress: null,
         goodsName: null,
+        orderOrigin: "1",
         courierOrderExtend: {
           goodsType: "小件",
           jtGoodsType: "bm000001",
@@ -391,10 +431,21 @@ export default {
     });
   },
   methods: {
+    checkedAgreeHandle() {
+      this.checkedAgree = true;
+      this.dialogVisible = false;
+    },
     delAddressItem(id) {
       let index = this.addAddressList.findIndex((item) => item.id === id);
       if (index !== -1) {
         this.addAddressList.splice(index, 1);
+      }
+    },
+    orderOriginInput(data){
+      if (data === '4'){
+        this.parsedData.courierOrderExtend.goodsType='大件'
+      }else {
+        this.parsedData.courierOrderExtend.goodsType='小件'
       }
     },
     toAddAddressList() {
@@ -498,6 +549,12 @@ export default {
         this.selectedTo = [data.province, data.city, data.area];
       }
     },
+    xieyiShow(){
+      this.$refs.xieyiDig.xieYishowDialog(true);
+    },
+    billRuleShow(){
+      this.$refs.billRuleDig.showDialog();
+    },
     goodsNameChange(data) {
       this.categoryList.forEach((item) => {
         if (
@@ -512,6 +569,15 @@ export default {
       });
     },
     onSubmit() {
+      if (this.parsedData.weight >20 && this.parsedData.orderOrigin ==='1'){
+        this.$notify({
+          title: "重量超过20kg请选择快运B2C！",
+          type: "error",
+          duration: 3000,
+        });
+        return;
+      }
+
       this.loading = true;
       let list = [];
       this.addAddressList.forEach((item) => {
@@ -556,6 +622,10 @@ export default {
   .del-btn {
     float: right;
     margin-right: 10px;
+  }
+  .link {
+    cursor: pointer;
+    color: #1890ff;
   }
   .box {
     max-width: 1405px;

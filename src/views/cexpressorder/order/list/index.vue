@@ -31,8 +31,8 @@
           <el-form-item label="运单号">
             <el-input v-model="query.courierCompanyWaybillNo" />
           </el-form-item>
-          <el-form-item label="物品名称">
-            <el-input v-model="query.goodsName" />
+          <el-form-item label="订单编号">
+            <el-input v-model="query.companyBillCode" />
           </el-form-item>
           <!-- <el-form-item label="订单状态">
             <el-select v-model="query.orderState" style="width: 172px;" v-if="query.orderState !== '000'">
@@ -180,6 +180,19 @@
       />
       <el-table-column
         :show-overflow-tooltip="true"
+        prop="company_bill_code"
+        label="订单编号"
+        width="150"
+      >
+        <template slot-scope="scope">
+          <span>{{
+              getCourierOrderExtendValue(scope.row.courierOrderExtend, 'company_bill_code')
+            }}</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column
+        :show-overflow-tooltip="true"
         prop="createTime"
         label="创建时间"
         width="150"
@@ -189,13 +202,13 @@
         :show-overflow-tooltip="true"
         prop="courierCompanyCode"
         label="快递公司"
-        width="150"
+        width="70"
       />
       <el-table-column
         :show-overflow-tooltip="true"
         prop="courierCompanyWaybillNo"
         label="运单号"
-        width="200"
+        width="150"
       >
         <template slot-scope="scope">
           <div class="copy_box">
@@ -258,6 +271,15 @@
       </el-table-column>
       <el-table-column
         :show-overflow-tooltip="true"
+        prop="orderOrigin"
+        label="下单来源"
+      >
+        <template slot-scope="scope">
+          <span>{{ orderOrigin[scope.row.orderOrigin] }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column
+        :show-overflow-tooltip="true"
         prop="orderState"
         label="订单取消状态"
       >
@@ -284,11 +306,11 @@
         :show-overflow-tooltip="true"
         prop="reason"
         label="异常原因"
+        width="200"
       >
         <template slot-scope="scope">
           <span>{{
-            scope.row.courierOrderExtend &&
-            scope.row.courierOrderExtend.orderIsErrorMsg
+              getCourierOrderExtendValue(scope.row.courierOrderExtend, 'orderIsErrorMsg')
           }}</span>
         </template>
       </el-table-column>
@@ -393,6 +415,14 @@
             @click="toQueryCourierTrack(scope.row.id)"
             >物流信息</el-button
           >
+          <el-button
+            size="mini"
+            style="margin-right: 3px"
+            type="text"
+            v-if="scope.row.courierCompanyWaybillNo === '' || scope.row.courierCompanyWaybillNo === undefined "
+            @click="toDelete(scope.row.id)">
+            删除
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -481,6 +511,11 @@ export default {
         2: "审核通过",
         3: "审核不通过",
       },
+      // 京东下单来源1：快递B2C，4：快运B2C
+      orderOrigin: {
+        1: "快递B2C",
+        4: "快运B2C",
+      },
       // 是否异常：0异常1正常
       orderIsError: {
         0: "异常",
@@ -513,6 +548,22 @@ export default {
         this.query.eTime = undefined;
         this.query.sTime = undefined;
       }
+    },
+    getCourierOrderExtendValue(courierOrderExtend,propertyName) {
+      const parsedData = JSON.parse(courierOrderExtend);
+      return parsedData[propertyName];
+    },
+
+    toDelete(id) {
+      this.delLoading = true;
+      crudJob
+        .del([id])
+        .then(() => {
+          this.crud.toQuery();
+        })
+        .catch(() => {
+          this.crud.toQuery();
+        });
     },
     handleChange(file, fileList) {
       console.error(file, fileList);

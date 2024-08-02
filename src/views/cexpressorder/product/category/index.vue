@@ -49,6 +49,9 @@
         <el-form-item label="高(cm)：" prop="height">
           <el-input v-model="form.height"></el-input>
         </el-form-item>
+        <el-form-item label="体积重(cm³)：" prop="volume">
+          <el-input v-model="form.volume"></el-input>
+        </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
           <el-button type="text" @click="crud.cancelCU">取消</el-button>
@@ -91,7 +94,7 @@
         prop="categoryName"
         label="商品名字"
       />
-      
+
       <el-table-column
         prop="categoreCode"
         label="商品编码"
@@ -112,7 +115,11 @@
         prop="height"
         label="高(cm)"
       />
-      
+      <el-table-column
+        prop="volume"
+        label="体积重(cm³)"
+      />
+
       <el-table-column
         label="操作"
         width="170px"
@@ -186,7 +193,7 @@ export default {
         add: true,
         edit: false,
         del: false,
-        download: false,
+        download: true,
         reset: true,
       },
     });

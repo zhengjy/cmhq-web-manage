@@ -154,7 +154,7 @@
         :show-overflow-tooltip="true"
         prop="courierCompanyCode"
         label="快递公司"
-        width="150"
+        width="70"
       />
       <el-table-column
         :show-overflow-tooltip="true"
@@ -194,6 +194,15 @@
         prop="quantity"
         label="包裹数"
       />
+      <el-table-column
+        :show-overflow-tooltip="true"
+        prop="orderOrigin"
+        label="下单来源"
+      >
+        <template slot-scope="scope">
+          <span>{{ orderOrigin[scope.row.orderOrigin] }}</span>
+        </template>
+      </el-table-column>
       <el-table-column
         :show-overflow-tooltip="true"
         prop="cancelOrderStat"
@@ -239,10 +248,11 @@
        <el-table-column
         :show-overflow-tooltip="true"
         prop="reason"
+        width="200"
         label="异常原因"
       >
       <template slot-scope="scope">
-            <span>{{ scope.row.courierOrderExtend && scope.row.courierOrderExtend.orderIsErrorMsg }}</span>
+            <span>{{ getCourierOrderExtendValue(scope.row.courierOrderExtend, 'orderIsErrorMsg') }}</span>
 
       </template>
      </el-table-column>
@@ -319,6 +329,14 @@
           </el-popover> -->
           <!-- <el-button  size="mini" style="margin-right: 3px;" type="text" @click="crud.toEdit(scope.row)">订单反馈</el-button> -->
           <el-button style="margin-left: -2px" type="text" size="mini" @click="toQueryCourierTrack(scope.row.id)">物流信息</el-button>
+          <el-button
+            size="mini"
+            style="margin-right: 3px"
+            type="text"
+            v-if="scope.row.courierCompanyWaybillNo === '' || scope.row.courierCompanyWaybillNo === undefined "
+            @click="toDelete(scope.row.id)">
+            删除
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -383,6 +401,11 @@ export default {
         2: "已取件",
         // 3: "已取消",
       },
+      // 京东下单来源1：快递B2C，4：快运B2C
+      orderOrigin: {
+        1: "快递B2C",
+        4: "快运B2C",
+      },
       // -1:待审核,0取消待审核1正常2审核通过3审核不通过
       cancelOrderState:{
         '-1': "待审核",
@@ -423,6 +446,21 @@ export default {
         this.query.eTime = undefined;
         this.query.sTime = undefined;
       }
+    },
+    getCourierOrderExtendValue(courierOrderExtend,propertyName) {
+      const parsedData = JSON.parse(courierOrderExtend);
+      return parsedData[propertyName];
+    },
+    toDelete(id) {
+      this.delLoading = true;
+      crudJob
+        .del([id])
+        .then(() => {
+          this.crud.toQuery();
+        })
+        .catch(() => {
+          this.crud.toQuery();
+        });
     },
     changeBtn(item, key) {
       console.error(item, key);
